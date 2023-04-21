@@ -16,6 +16,7 @@ class Material:
         # eventually sample tint color based on hit location / UV coordinates
         reflected_directions = rays.directions - 2 * normals * (normals * rays.directions).sum(axis=1)[:, None]
         scattered_directions = self.glossiness * reflected_directions + (1 - self.glossiness) * diffuse_directions
+        scattered_directions = scattered_directions/np.linalg.norm(scattered_directions, axis=1)[:,None]
         tint = self.diffuse * (1 - self.glossiness) + self.specular * self.glossiness
         scattered_rays = rays.copy()
         scattered_rays.set_starts(hit_points)

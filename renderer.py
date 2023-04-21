@@ -1,3 +1,5 @@
+import datetime
+
 import numpy as np
 import pandas as pd
 
@@ -7,16 +9,22 @@ from environment import Environment
 from hitable import Hittable
 from light import Light
 from ray import Rays, RaysPD
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def render(camera: Camera, objects: list, lights: list[Light], samples=1, bounces=2):
     img = np.zeros((camera.height, camera.width, 3))
-    for i in range(samples):
+    for sample in range(samples):
+        logger.info(f'processing sample {sample+1}')
         rays = camera.emit_rays()
         rays = RaysPD(rays.rays_matrix)
         idx_x, idx_y = camera.get_indices(rays)
         rays.add_data(pd.DataFrame({'idx_x': idx_x, 'idx_y': idx_y}))
         for bounce in range(bounces):
+            start = datetime.datetime.now()
+            logger.info(f'processing bounce {bounce+1} with {rays.count} rays')
             # finding the closest instersecting object
             distances = np.ones((rays.count, len(objects)))
             for i, o in enumerate(objects):
@@ -43,18 +51,21 @@ def render(camera: Camera, objects: list, lights: list[Light], samples=1, bounce
                     # update pixels with colors
                     normals = obj.get_normals(obj_hit_points)
                     for light in lights:
+                        # TODO: only 1 call of is_in_line_of_sight per bounce (not one per object)
                         los = is_in_line_of_sight(light.get_start_point()[None, :] * np.ones((obj_rays.count, 1)),
                                                   obj_hit_points, objects)
                         indices_in_sight = indices[los, :]
                         img[indices_in_sight[:, 0], indices_in_sight[:, 1]] += \
-                            light.phong(obj_rays[los], obj.material, obj_hit_points[los, :], normals[los, :])
-                    rays.add_rays(obj.scatters(obj_rays, normals, obj_hit_points))
+                            light.phong(obj_rays[los], obj.material, obj_hit_points[los, :], normals[los, :]) * obj_rays[los].colors
 
+                    rays.add_rays(obj.scatters(obj_rays, normals, obj_hit_points))
+            logger.info(f'Bounce calculation time: {datetime.datetime.now() - start}')
         pass
     return img/samples
 
 
 def is_in_line_of_sight(p1: np.array, p2: np.array, objects: list[Hittable]) -> np.array:
+    # return np.ones(p1.shape[0]).astype(bool)
     diffs = p2 - p1
     distances = np.linalg.norm(diffs, axis=1)
     dirs = diffs/distances[:, None]
@@ -69,5 +80,5 @@ def is_in_line_of_sight(p1: np.array, p2: np.array, objects: list[Hittable]) -> 
 
         rays = rays[np.logical_not(in_between)]
         distances = distances[np.logical_not(in_between)]
-    return lines_of_sights
+    return lines_of_sights # == lines_of_sights
 
