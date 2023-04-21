@@ -9,7 +9,7 @@ class Light:
     def phong(self, rays: RaysPD, material: Material, hit_points: np.array, normals: np.array):
         ...
 
-    def get_start_point(self) -> np.array:
+    def get_start_point(self, count=None) -> np.array:
         ...
 
 
@@ -32,7 +32,9 @@ class PointLight(Light):
         # specularCosAngle = dot(mirrorReflection, -lightRay.direction)
         return phong
 
-    def get_start_point(self) -> np.array:
+    def get_start_point(self, count=None) -> np.array:
+        if count is not None:
+            return np.ones((count, 3)) * self.position[None, :]
         return self.position
 
 class SunLight(Light):
@@ -52,5 +54,7 @@ class SunLight(Light):
         # specularCosAngle = dot(mirrorReflection, -lightRay.direction)
         return phong
 
-    def get_start_point(self) -> np.array:
+    def get_start_point(self, count=None) -> np.array:
+        if count is not None:
+            return np.ones((count, 3)) * -self.direction[None, :] * MAX_DISTANCE * 0.9
         return -self.direction * MAX_DISTANCE * 0.9

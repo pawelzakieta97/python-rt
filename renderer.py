@@ -43,6 +43,8 @@ def render(camera: Camera, objects: list, lights: list[Light], samples=1, bounce
 
             # Updating image pixels' colors and generating a new set of rays
             rays = RaysPD()
+
+            light_rays = RaysPD()
             for obj, (obj_rays, obj_hit_points) in obj_hits.items():
                 indices = obj_rays.get_data(['idx_y', 'idx_x'])
                 if isinstance(obj, Environment):
@@ -51,21 +53,37 @@ def render(camera: Camera, objects: list, lights: list[Light], samples=1, bounce
                     # update pixels with colors
                     normals = obj.get_normals(obj_hit_points)
                     for light in lights:
-                        # TODO: only 1 call of is_in_line_of_sight per bounce (not one per object)
-                        los = is_in_line_of_sight(light.get_start_point()[None, :] * np.ones((obj_rays.count, 1)),
-                                                  obj_hit_points, objects)
-                        indices_in_sight = indices[los, :]
-                        img[indices_in_sight[:, 0], indices_in_sight[:, 1]] += \
-                            light.phong(obj_rays[los], obj.material, obj_hit_points[los, :], normals[los, :]) * obj_rays[los].colors
+                        pass
+                        obj_light_rays = obj_rays.copy()
+                        obj_light_rays.data = obj_light_rays.data.reset_index(drop=True)
+                        l2hp = obj_hit_points - light.get_start_point(obj_rays.count)
+                        obj_light_rays.set_starts(light.get_start_point(obj_rays.count))
+                        obj_light_rays.set_directions(l2hp/np.linalg.norm(l2hp, axis=1)[:, None])
+                        obj_light_rays.set_colors(light.phong(obj_rays, obj.material, obj_hit_points, normals) *
+                                                  obj_rays.colors)
+                        obj_light_rays.add_data(pd.DataFrame(obj_hit_points, columns=['hit_point_x', 'hit_point_y', 'hit_point_z']))
+                        light_rays.add_rays(obj_light_rays)
+
+
+                        # los = is_in_line_of_sight(light.get_start_point()[None, :] * np.ones((obj_rays.count, 1)),
+                        #                           obj_hit_points, objects)
+                        # indices_in_sight = indices[los, :]
+                        # img[indices_in_sight[:, 0], indices_in_sight[:, 1]] += \
+                        #     light.phong(obj_rays[los], obj.material, obj_hit_points[los, :], normals[los, :]) * obj_rays[los].colors
 
                     rays.add_rays(obj.scatters(obj_rays, normals, obj_hit_points))
+
+            los = is_in_line_of_sight_rays(light_rays, light_rays.get_data(['hit_point_x', 'hit_point_y', 'hit_point_z']), objects)
+            indices = light_rays.get_data(['idx_y', 'idx_x'])
+            indices_in_sight = indices[los, :]
+            img[indices_in_sight[:, 0], indices_in_sight[:, 1]] += light_rays[los].colors
             logger.info(f'Bounce calculation time: {datetime.datetime.now() - start}')
         pass
     return img/samples
 
 
 def is_in_line_of_sight(p1: np.array, p2: np.array, objects: list[Hittable]) -> np.array:
-    # return np.ones(p1.shape[0]).astype(bool)
+    return np.ones(p1.shape[0]).astype(bool)
     diffs = p2 - p1
     distances = np.linalg.norm(diffs, axis=1)
     dirs = diffs/distances[:, None]
@@ -73,6 +91,24 @@ def is_in_line_of_sight(p1: np.array, p2: np.array, objects: list[Hittable]) -> 
     rays = RaysPD(starts=p1, directions=dirs, colors=np.zeros(p1.shape))
     rays.add_data(pd.DataFrame({'index': np.arange(rays.count)}))
     lines_of_sights = np.ones(p1.shape[0]).astype(bool)
+    for obj in objects:
+        ds = obj.hits(rays)
+        in_between = ds < distances - MIN_DISTANCE
+        lines_of_sights[rays.get_data(['index'])[in_between]] = False
+
+        rays = rays[np.logical_not(in_between)]
+        distances = distances[np.logical_not(in_between)]
+    return lines_of_sights # == lines_of_sights
+
+
+def is_in_line_of_sight_rays(rays: RaysPD, end_points, objects: list[Hittable]) -> np.array:
+    # return np.ones(rays.count).astype(bool)
+    diffs = end_points - rays.starts
+    rays.data = rays.data.reset_index(drop=True)
+    distances = np.linalg.norm(diffs, axis=1)
+    # ray = Ray(p1, dir, Vec3(0,0,0))
+    rays.add_data(pd.DataFrame({'index': np.arange(rays.count)}))
+    lines_of_sights = np.ones(rays.count).astype(bool)
     for obj in objects:
         ds = obj.hits(rays)
         in_between = ds < distances - MIN_DISTANCE
