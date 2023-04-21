@@ -1,6 +1,6 @@
 # python-rt
-Ray tracing implementation in python. Uses a breadth first instead of depth-first approach.
-Whis eliminates the recursive nature of the algorithm and allows for efficient numpy implementation
+Ray tracing implementation in Python. Uses a breadth first instead of depth-first approach.
+This eliminates the recursive nature of the algorithm and allows for efficient numpy implementation
 
 
 10 samples ~ 45s per sample 1000x1000 300 objects  
