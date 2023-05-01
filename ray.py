@@ -1,82 +1,52 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import Union
 
 import numpy as np
 import pandas as pd
 
 
-class Ray:
-    def __init__(self, start, direction, color):
-        self.start = start
-        self.direction = direction
-        self.color = color
-
-
-class Rays:
-    def __init__(self, rays_matrix=None, rays_array=None):
-        if rays_matrix is None and rays_array is None:
-            rays_matrix = np.zeros((0, 9))
-        self._rays_matrix = rays_matrix
-        self._rays_array = rays_array
-        self.count = rays_matrix.shape[0] if rays_matrix is not None else len(rays_array)
-        self.additional_data = {}
+class Rays(ABC):
+    @property
+    def starts(self) -> np.array:
+        raise NotImplemented
 
     @property
-    def rays_array(self):
-        if self._rays_array is not None:
-            return self._rays_array
-        rays = []
-        for r in self._rays_matrix:
-            rays.append(Ray(r[:3], r[3:6], r[6:9]))
-        self._rays_array = rays
-        return rays
+    def directions(self) -> np.array:
+        raise NotImplemented
 
     @property
-    def rays_matrix(self):
-        if self._rays_matrix is not None:
-            return self._rays_matrix
-        rays = np.zeros((len(self._rays_array), 9))
-        for i, r in enumerate(self._rays_array):
-            rays[i, :3] = r.start
-            rays[i, 3:6] = r.direction
-            rays[i, 6:9] = r.color
-        self._rays_matrix = rays
-        return rays
+    def colors(self) -> np.array:
+        raise NotImplemented
 
     @property
-    def starts(self):
-        return self.rays_matrix[:, :3]
+    def count(self) -> int:
+        raise NotImplemented
 
-    @property
-    def directions(self):
-        return self.rays_matrix[:, 3:6]
 
-    @property
-    def colors(self):
-        return self.rays_matrix[:, 6:9]
+    def set_starts(self, starts: np.array):
+        raise NotImplemented
+
+    def set_directions(self, starts: np.array):
+        raise NotImplemented
 
     def set_colors(self, colors: np.array):
-        self.rays_matrix[:, 6:9] = colors
+        raise NotImplemented
 
     def add_rays(self, rays: Rays):
-        if self._rays_matrix.shape[0] == 0:
-            self._rays_matrix = rays.rays_matrix
-            return
-        self._rays_matrix = np.vstack((self._rays_matrix, rays.rays_matrix))
+        raise NotImplemented
 
-    def add_data(self, additional_data: np.array, data_name=None):
-        idx_start = self._rays_matrix.shape[1]
-        self._rays_matrix = np.hstack(self._rays_array, additional_data)
-        if data_name is not None:
-            self.additional_data[data_name] = (idx_start, self._rays_matrix.shape[1])
+    def add_data(self, additional_data: np.array, columns: list[str]):
+        raise NotImplemented
 
-    def get_additional_data(self, data_name):
-        return self._rays_matrix[:, self.additional_data[data_name][0]: self.additional_data[data_name][1]]
+    def get_additional_data(self, data_name) -> np.array:
+        raise NotImplemented
 
 
-class RaysPD:
-    def __init__(self, data: Union[np.array, pd.DataFrame]=None, starts=None, directions=None, colors=None):
+class RaysPD(Rays):
+    def __init__(self, data: Union[np.array, pd.DataFrame] = None,
+                 starts=None, directions=None, colors=None):
         if isinstance(data, pd.DataFrame):
             self.data = data
             return
@@ -127,8 +97,9 @@ class RaysPD:
     def add_rays(self, rays: RaysPD):
         self.data = pd.concat((self.data, rays.data), axis=0)
 
-    def add_data(self, additional_data: pd.DataFrame):
-        self.data = pd.concat((self.data, additional_data), axis=1)
+    def add_data(self, additional_data, columns):
+        self.data = self.data.reset_index(drop=True)
+        self.data = pd.concat((self.data, pd.DataFrame(additional_data, columns=columns)), axis=1)
 
     def get_data(self, columns: list[str]):
         return self.data[columns].to_numpy()

@@ -4,6 +4,7 @@ import numpy as np
 
 from material import Material
 from ray import Rays, RaysPD
+from ray_np import RaysNP as RaysPD
 
 
 class Hittable:

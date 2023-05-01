@@ -4,6 +4,7 @@ from constants import MAX_DISTANCE, MIN_DISTANCE
 from hitable import HittableCollection, Hittable
 from material import Material
 from ray import Rays, RaysPD
+from ray_np import RaysNP as RaysPD
 
 
 class Sphere(Hittable):
@@ -35,34 +36,15 @@ class Sphere(Hittable):
         return diff/self.radius
 
 
-
-class Spheres(HittableCollection):
-    def __init__(self, spheres_array: list[Sphere], spheres_matrix: np.array = None):
-        self._spheres_array = spheres_array
-        self._spheres_matrix = spheres_matrix
-
-    @property
-    def spheres_array(self):
-        if self._spheres_array is not None:
-            return self._spheres_array
-        spheres = []
-        for s in self._spheres_matrix:
-            spheres.append(Sphere(s[:3], s[3], Material(s[4:7], s[7:10], s[10])))
-        return spheres
-
-    @property
-    def spheres_matrix(self):
-        if self._spheres_matrix is not None:
-            return self._spheres_matrix
-        spheres = np.zeros((len(self._spheres_array)))
-        for i, s in enumerate(self._spheres_array):
-            spheres[:3] = self._spheres_array[i].pos
-            spheres[3] = self._spheres_array[i].radius
-            spheres[4:7] = self._spheres_array[i].material.diffuse
-            spheres[7:10] = self._spheres_array[i].material.specular
-            spheres[10] = self._spheres_array[i].material.roughness
-        return spheres
-
-
-
-Sphere.collection_class = Spheres
+if __name__ == '__main__':
+    count = 10_000_000
+    starts = np.zeros((count, 3))
+    directions = np.zeros((count, 3))
+    directions[:,0] = 1
+    colors = np.zeros((count, 3))
+    rays = RaysPD(starts=starts, directions=directions, colors=colors)
+    s = Sphere(np.array([10,0,0]), 2, None)
+    import datetime
+    start = datetime.datetime.now()
+    res = s.hits(rays)
+    print(datetime.datetime.now() - start)

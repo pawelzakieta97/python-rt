@@ -1,6 +1,7 @@
 import numpy as np
 
 from ray import Rays, RaysPD
+from ray_np import RaysNP as RaysPD
 from utils import random_unit_vector
 
 

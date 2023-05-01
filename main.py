@@ -7,6 +7,8 @@ from light import PointLight, SunLight
 from material import Material
 from plane import Plane
 from populator import generate_uniformly_distributed_points
+from ray import RaysPD
+from ray_np import RaysNP
 from renderer import render
 from sphere import Sphere
 from utils import get_translation_matrix, get_rotation_matrix_x
@@ -66,8 +68,9 @@ if __name__ == '__main__':
                  # objects=[env, p, red_sphere],
                  # objects=[env, p] + generate_random_spheres(count=20),
                  lights=[sl],
-                 bounces=4,
-                 samples=10)
+                 bounces=5,
+                 samples=1,
+                 rays_class=RaysNP)
     cv2.imshow('render', img)
     cv2.waitKey(0)
     pass
