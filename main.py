@@ -8,7 +8,7 @@ from material import Material
 from plane import Plane
 from populator import generate_uniformly_distributed_points
 from ray import RaysPD
-from ray_np import RaysNP
+from ray_np import RaysNP, RaysNP2, RaysNP3
 from renderer import render
 from sphere import Sphere
 from utils import get_translation_matrix, get_rotation_matrix_x
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     m = Material(np.array([0.5, 0.5, 0.5]), np.array([0.0, 0.0, 0.0]), 0)
     red_diff = Material(np.array([0.0, 0.0, 1]), np.array([0.0, 0.0, 0.0]), 0)
     mirror = Material(np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0]), 1)
-    red_sphere = Sphere(np.array([8, 0, 2]), 2, red_diff)
+    red_sphere = Sphere(np.array([0, 25, 10]), 10, red_diff)
     # red_sphere = Sphere(np.array([-6, 0, 5]), 5, Material(diffuse=np.array([0.35726976, 0.90853515, 0.62336012]), specular=np.array([0.98983121, 0.99855291, 0.99404109]), glossiness=0.5))
     mirror_sphere = Sphere(np.array([-8, 0, 5]), 5, mirror)
     # mirror_sphere = Sphere(np.array([6, 0, 5]), 5, Material(diffuse=np.array([0.6852195, 0.20445225, 0.87811744]), specular=np.array([0.99137892, 0.97821186, 0.99666193]), glossiness=0.5))
@@ -68,9 +68,9 @@ if __name__ == '__main__':
                  # objects=[env, p, red_sphere],
                  # objects=[env, p] + generate_random_spheres(count=20),
                  lights=[sl],
-                 bounces=5,
+                 bounces=1,
                  samples=1,
-                 rays_class=RaysNP)
+                 rays_class=RaysNP2)
     cv2.imshow('render', img)
     cv2.waitKey(0)
     pass

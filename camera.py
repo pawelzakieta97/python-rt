@@ -29,10 +29,12 @@ class Camera:
         rays = rays.reshape((ray_count, 3))
         rays = np.dot(self.pose[:3, :3], rays.T).T
         color = np.array([1, 1, 1])
-        rays = np.hstack((self.pose[:3, 3] * np.ones((ray_count, 1)), rays, color[None, :] * np.ones((ray_count, 1))))
-        return c(rays)
+        # rays = np.hstack((self.pose[:3, 3] * np.ones((ray_count, 1)), rays, color[None, :] * np.ones((ray_count, 1))))
+        return c(starts=self.pose[:3, 3] * np.ones((ray_count, 1)),
+                 directions=rays,
+                 colors=color[None, :] * np.ones((ray_count, 1)))
 
-    def get_indices(self, rays: Union[Rays, RaysPD]) -> np.array:
+    def get_indices(self, rays: Rays) -> np.array:
         rel_directions = np.dot(np.linalg.inv(self.pose)[:3, :3], rays.directions.T).T
         xs = rel_directions[:, 0] / rel_directions[:, 2] * self.f + self.width/2
         ys = rel_directions[:, 1] / rel_directions[:, 2] * self.f + self.height/2
