@@ -68,8 +68,8 @@ if __name__ == '__main__':
                  # objects=[env, p, red_sphere],
                  # objects=[env, p] + generate_random_spheres(count=20),
                  lights=[sl],
-                 bounces=1,
-                 samples=1,
+                 bounces=4,
+                 samples=10,
                  rays_class=RaysNP2)
     cv2.imshow('render', img)
     cv2.waitKey(0)
